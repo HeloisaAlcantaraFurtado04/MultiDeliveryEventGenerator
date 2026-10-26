@@ -4,48 +4,48 @@
 # Multi-Delivery App
 
 ## Overview
-The Multi-Delivery App allows students to order items from different stores or restaurants and have them delivered to a selected campus location. The system tracks ordering, payment, preparation, pickups, and delivery to ensure that each order is completed correctly.
+The Multi-Delivery App allows students to order items from different stores or restaurants and have them delivered to a selected campus location. 
 
 ## Constraints
 
 ### 1. Ordering
-An order must be placed before it can be processed.
+An order must be placed before it can be processed
 
 ### 2. Payment
-Payment must be completed before preparation or dispatch can begin.
+Payment must be completed before preparation can begin
 
 ### 3. Availability
-An item must be available before the seller can fulfill the order.
+An item must be available before the seller can fulfill the order
 
 ### 4. Preparation
-Food must be prepared, and books or supplies must be collected, before pickup.
+Food must be prepared, and supplies must be collected, before pickup
 
 ### 5. Pickup
-The delivery driver must pick up an item before delivering it.
+The delivery driver must pick up an item before delivering it
 
 ### 6. Delivery Sequence
 An order cannot be marked as delivered before it has been picked up.
 
 ### 7. Timing
-An order should be delivered within the estimated delivery window.
+An order should be delivered within the estimated delivery window
 
 ### 8. Location
-The delivery must be made to the student's selected campus location.
+The delivery must be made to the student's location
 
 ### 9. Student Identity
-Each order must be associated with the correct student account.
+Each order must be associated with the correct student account
 
 ### 10. Correct Items
-The student must receive the items they actually ordered.
+The student must receive the items they actually ordered
 
 ### 11. Completeness
-An order should not be marked complete until all required items have been accounted for and delivered.
+An order should not be marked complete until all required items have been accounted for and delivered
 
 ### 12. Dependency
-If an order combines items from different stores or restaurants, the app must account for all required pickups before completing the delivery.
+If an order combines items from different stores or restaurants, the app must account for all required pickups before completing the delivery
 
 ### 13. Event Reference
-Each pickup and delivery event must be associated with the correct order.
+Each pickup and delivery event must be associated with the correct order
 
 ### 14. Status
 An order's status must follow valid transitions:
