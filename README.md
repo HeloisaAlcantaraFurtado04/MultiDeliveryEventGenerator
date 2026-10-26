@@ -114,7 +114,5 @@ The database stores the information needed to manage students, sellers, items, o
 - `order_items`
 - `events`
 
-### References
+[View Database Tables] (https://docs.google.com/spreadsheets/d/1u-LX9lzAdv4MZYq0FdlmohyunyQ-Uek2qdgAu1zaqhY/edit?usp=sharing)
 
-- Database schema: *Add database schema reference here.*
-- Event definitions: *Add event definitions or CEP query reference here.*
