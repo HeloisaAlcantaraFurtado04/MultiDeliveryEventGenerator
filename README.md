@@ -4,9 +4,7 @@
 
 The Multi-Delivery App is an application where students can order food, books, and other supplies from different stores and restaurants around campus. They can choose a delivery location and have their items delivered there.
 
-Students can look at items without signing in, but they need to log in when placing an order. They can also order items from multiple stores in the same order.
-
-Our goal is to generate event streams that represent how the ordering and delivery process works, including situations where payments fail or deliveries take longer than expected.
+Students can look at items without signing in, but they need to log in when placing an order. They can also order items from multiple stores in the same order.Our goal is to generate event streams that represent how the ordering and delivery process works, including situations where payments fail or deliveries take longer than expected.
 
 ## Constraints
 
@@ -161,9 +159,5 @@ We also want to include cases where payments fail or deliveries are delayed, ins
 
 Some parts, such as making sure all sellers have been picked up before delivery and choosing between successful and failed payments, still need to be implemented in the generator.
 
----
 
-## References
-- [CEPAL GitHub Repository](https://github.com/TianyiYang-Tyler/event-stream-generation-and-monitoring)
-- Database schema: Add link
-- CEPAL code: Add link
+
