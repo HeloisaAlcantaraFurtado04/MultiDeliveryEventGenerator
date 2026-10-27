@@ -132,7 +132,7 @@ CREATE EVENTTYPE ItemsReady (
    order_id: INHERIT ItemsPreparing(order_id),
    seller_id: INHERIT ItemsPreparing(seller_id),
 
-   (order_id, seller_id) -> ALL
+   (order_id, seller_id) -> ALL #readiness correct store and order 
 )
 
 
@@ -143,7 +143,7 @@ CREATE EVENTTYPE DriverAssigned (
 
    event_id: AUTO_INCREMENT,
    order_id: INHERIT PaymentCompleted(order_id),
-   driver_id: orders(driver_id) FOREIGNKEY,
+   driver_id: orders(driver_id) FOREIGNKEY, #order id determines the driver 
 
    order_id -> driver_id
 )
@@ -169,7 +169,7 @@ CREATE EVENTTYPE OrderDelivered (
    INGESTTIME (1) MAXDELAY (10),
 
    event_id: AUTO_INCREMENT,
-   order_id: INHERIT OrderPlaced(order_id),
+   order_id: INHERIT OrderPlaced(order_id), #which order was delivered 
    student_id: INHERIT OrderPlaced(student_id),
    driver_id: INHERIT DriverAssigned(driver_id),
    delivery_location: INHERIT OrderPlaced(delivery_location),
@@ -187,6 +187,8 @@ CREATE EVENTTYPE OrderDelivered (
 E0: CAUSE START; OrderStarted
 
 
+# Adding items takes 1 to 5 minutes
+>>>>>>> 29d5700 (Update multi-delivery event generator)
 E1: CAUSE OrderStarted; AddItem
    TIME BETWEEN 1MINUTE AND 5MINUTE
    COUNT BETWEEN 1 AND 5 #number of items 
@@ -194,6 +196,9 @@ E1: CAUSE OrderStarted; AddItem
 E2: CAUSE OrderStarted; OrderPlaced
    TIME BETWEEN 6MINUTE AND 10MINUTE 
 
+
+# Payment happens after the order is placed
+# assume this takes 4 to 9 minutes from order placement
 E3: CAUSE OrderPlaced; PaymentCompleted
    TIME BETWEEN 4MINUTE AND 9MINUTE
 
@@ -235,7 +240,7 @@ TERMINATE OrderCancelled
 # More orders around lunch and dinner.
 
 
-CREATE DISTRIBUTION FOR START (
+CREATE DISTRIBUTION FOR START (  #based on assumptions
    BASE_TIME_GRANULARITY = 1MINUTE,
    #8am - 12pm 
    [0,240) : 26, 
@@ -246,6 +251,14 @@ CREATE DISTRIBUTION FOR START (
    #4pm - 8pm 
    [480,720) : 62
 )
+   [0,120) : 8, #numbers of orders 8 AM -10 AM 
+   [120,240) : 18, #numbers of orders 10 AM–12 PM
+   [240,360) : 36, #numbers of orders 12–2 PM
+   [360,480) : 12, #numbers of orders 2–4 PM
+   [480,600) : 22, #numbers of orders 4–6 PM
+   [600,720) : 40 #numbers of orders 6–8 PM
+)
+
 
 # ----------------------------------
 # PREPARATION TIME DISTRIBUTION
@@ -257,8 +270,8 @@ CREATE DISTRIBUTION FOR START (
 #perecntage 
 CREATE TIME DISTRIBUTION FOR E5 (
    BASE_TIME_GRANULARITY = 1MINUTE,
-   [4,9) : 70,
-   [9,16) : 30
+   [4,9) : 70, #weight 70
+   [9,16) : 30 #weight 30
 )
 
 
@@ -277,6 +290,8 @@ CREATE TIME DISTRIBUTION FOR E8 (
    [35,50)  : 50,
    [50,80)  : 25,
    [80,121) : 5
+   [35,50) : 85, #weight 85
+   [50,80) : 15 #weight 15
 )
 
 END
