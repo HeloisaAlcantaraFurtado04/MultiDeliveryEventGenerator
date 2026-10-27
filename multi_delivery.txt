@@ -1,0 +1,250 @@
+
+BASE_TIME_GRANULARITY = 1MINUTE
+START = 0,
+END = 12HOUR
+
+
+# Database tables
+RESOURCES
+TABLES
+   users,
+   sellers,
+   items,
+   orders,
+   order_items,
+   events,
+END TABLES
+
+VARIABLES
+END VARIABLES
+
+FUNCTIONS
+END FUNCTIONS
+
+
+# A student places an order after signing in
+CREATE EVENTTYPE OrderPlaced (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_id: AUTO_INCREMENT,
+   student_id: orders(student_id) FOREIGNKEY,
+   delivery_location: orders(delivery_location),
+   estimated_delivery_time: orders(estimated_delivery_time),
+   created_at: orders(created_at),
+
+   order_id -> ALL
+)
+
+
+# The student adds items from different sellers
+CREATE EVENTTYPE AddItem (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_item_id: AUTO_INCREMENT,
+   order_id: INHERIT OrderPlaced(order_id),
+   item_id: items(item_id) FOREIGNKEY,
+   seller_id: items(seller_id) FOREIGNKEY,
+   quantity: order_items(quantity),
+
+   order_item_id -> ALL
+)
+
+
+# Payment is successful
+CREATE EVENTTYPE PaymentCompleted (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_id: INHERIT OrderPlaced(order_id),
+   student_id: INHERIT OrderPlaced(student_id),
+
+   order_id -> ALL
+)
+
+
+# Payment fails
+CREATE EVENTTYPE PaymentFailed (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_id: INHERIT OrderPlaced(order_id),
+   student_id: INHERIT OrderPlaced(student_id),
+
+   order_id -> ALL
+)
+
+
+# The order is cancelled after a failed payment
+CREATE EVENTTYPE OrderCancelled (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_id: INHERIT PaymentFailed(order_id),
+   student_id: INHERIT PaymentFailed(student_id),
+
+   order_id -> ALL
+)
+
+
+# A seller starts preparing their items
+CREATE EVENTTYPE ItemsPreparing (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_id: INHERIT PaymentCompleted(order_id),
+   seller_id: sellers(seller_id) FOREIGNKEY,
+   is_available: items(is_available),
+
+   (order_id, seller_id) -> ALL
+)
+
+
+# A seller finishes preparing their items
+CREATE EVENTTYPE ItemsReady (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_id: INHERIT ItemsPreparing(order_id),
+   seller_id: INHERIT ItemsPreparing(seller_id),
+
+   (order_id, seller_id) -> ALL
+)
+
+
+# A driver is assigned to the order
+CREATE EVENTTYPE DriverAssigned (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_id: INHERIT PaymentCompleted(order_id),
+   driver_id: orders(driver_id) FOREIGNKEY,
+
+   order_id -> driver_id
+)
+
+
+# Driver picks up items from a seller
+CREATE EVENTTYPE ItemsPickedUp (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_id: INHERIT ItemsReady(order_id),
+   seller_id: INHERIT ItemsReady(seller_id),
+   driver_id: INHERIT DriverAssigned(driver_id),
+
+   (order_id, seller_id) -> driver_id
+)
+
+
+# The complete order reaches the student
+CREATE EVENTTYPE OrderDelivered (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_id: INHERIT OrderPlaced(order_id),
+   student_id: INHERIT OrderPlaced(student_id),
+   driver_id: INHERIT DriverAssigned(driver_id),
+   delivery_location: INHERIT OrderPlaced(delivery_location),
+   estimated_delivery_time: INHERIT OrderPlaced(estimated_delivery_time),
+
+   order_id -> ALL
+)
+
+
+# ----------------------------------
+# EVENT RELATIONSHIPS
+# ----------------------------------
+
+# Student places the order
+E0: CAUSE START; OrderPlaced
+
+
+# Student adds between 1 and 4 items
+E1: CAUSE OrderPlaced; AddItem
+   TIME BETWEEN 1MINUTE AND 5MINUTE
+   COUNT BETWEEN 1 AND 5
+
+
+# Payment is completed after items are added
+E2: CAUSE OrderPlaced; PaymentCompleted
+   TIME BETWEEN 6MINUTE AND 10MINUTE
+
+
+# Between 1 and 3 seller preparation events
+E3: CAUSE PaymentCompleted; ItemsPreparing
+   TIME BETWEEN 1MINUTE AND 5MINUTE
+   COUNT BETWEEN 1 AND 4
+
+
+# Each preparation event produces a ready event
+E4: CAUSE ItemsPreparing; ItemsReady
+   TIME BETWEEN 5MINUTE AND 20MINUTE
+
+
+# Assign a driver after the preparation window
+E5: CAUSE PaymentCompleted; DriverAssigned
+   TIME BETWEEN 25MINUTE AND 30MINUTE
+
+
+# The driver picks up from each seller
+E6: CAUSE ItemsReady; ItemsPickedUp
+   TIME BETWEEN 30MINUTE AND 40MINUTE
+
+
+# Delivery after the pickup window
+# Time distribution for E7 is defined below
+E7: CAUSE PaymentCompleted; OrderDelivered
+
+
+# Cancellation if a PaymentFailed event occurs
+# PaymentFailed needs separate branching logic
+E8: CAUSE PaymentFailed; OrderCancelled
+   TIME BETWEEN 1MINUTE AND 3MINUTE
+
+
+TERMINATE OrderDelivered
+TERMINATE OrderCancelled
+
+
+# ----------------------------------
+# ORDER ARRIVAL DISTRIBUTION
+# ----------------------------------
+
+CREATE DISTRIBUTION FOR START (
+   BASE_TIME_GRANULARITY = 1HOUR,
+   [0,8) : 500,
+   [8,9) : 800,
+   [9,10) : 740,
+   [10,11) : 740,
+   [11,12) : 800
+)
+
+
+# ----------------------------------
+# DELIVERY TIME DISTRIBUTION
+# ----------------------------------
+
+# 85% of the sampling weight is in the
+# shorter delivery interval.
+# 15% is in the longer delivery interval.
+
+CREATE TIME DISTRIBUTION FOR E7 (
+   BASE_TIME_GRANULARITY = 1MINUTE,
+   [70,100) : 85,
+   [100,180) : 15
+)
+
+
+END
