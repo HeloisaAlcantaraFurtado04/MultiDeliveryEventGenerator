@@ -88,10 +88,10 @@ Also, when an order has items from different stores, the sellers might finish pr
 ### Process Flow
 
 ```text
-OrderPlaced
+AddItem
      |
      v
-AddItem
+OrderPlaced
      |
      v
 Payment
