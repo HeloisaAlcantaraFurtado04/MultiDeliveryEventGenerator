@@ -187,57 +187,37 @@ CREATE EVENTTYPE OrderDelivered (
 E0: CAUSE START; OrderStarted
 
 
-
 E1: CAUSE OrderStarted; AddItem
    TIME BETWEEN 1MINUTE AND 5MINUTE
    COUNT BETWEEN 1 AND 5 #number of items 
 
-
-# Order placement happens 6 to 10 minutes after starting
 E2: CAUSE OrderStarted; OrderPlaced
-   TIME BETWEEN 6MINUTE AND 10MINUTE
+   TIME BETWEEN 6MINUTE AND 10MINUTE 
 
-
-# Payment happens after the order is placed
-# assume this takes 4 to 9 minutes from order placement
 E3: CAUSE OrderPlaced; PaymentCompleted
    TIME BETWEEN 4MINUTE AND 9MINUTE
 
 
-# We simulate between 1 and 3 sellers
 E4: CAUSE PaymentCompleted; ItemsPreparing
    TIME BETWEEN 1MINUTE AND 4MINUTE
    COUNT BETWEEN 1 AND 3
 
-
-# Preparation takes different amounts of time
-# The distribution for E5 is defined below
 E5: CAUSE ItemsPreparing; ItemsReady
 
 
-# A driver is assigned while the sellers are preparing
-# We assume driver assignment takes 3 to 6 minutes
+# driver assignment takes 3 to 6 minutes
 E6: CAUSE PaymentCompleted; DriverAssigned
    TIME BETWEEN 3MINUTE AND 6MINUTE
 
-
-# The driver travels to the seller and picks up the items
-# We assume this takes 6 to 13 minutes after items are ready
+# assume this takes 6 to 13 minutes after items are ready
 E7: CAUSE ItemsReady; ItemsPickedUp
    TIME BETWEEN 6MINUTE AND 13MINUTE
 
 
-# Approximate delivery timing after payment
-# A longer delivery time is possible
-# Distribution for E8 is defined below
-#
-# NOTE: This is a timing approximation.
-# It does not check whether every seller has been picked up.
 E8: CAUSE PaymentCompleted; OrderDelivered
 
 
 # If a payment failure is generated, cancel the order
-# Payment failure branching is not implemented yet
 E9: CAUSE PaymentFailed; OrderCancelled
    TIME BETWEEN 1MINUTE AND 3MINUTE
 
