@@ -223,13 +223,20 @@ TERMINATE OrderCancelled
 # ORDER ARRIVAL DISTRIBUTION
 # ----------------------------------
 
+# The simulation runs for 720 minutes (12 hours).
+# We assume it starts at 8 AM and ends at 8 PM.
+# More orders happen around lunch and dinner.
+# The numbers represent how many orders start
+# during each time interval.
+
 CREATE DISTRIBUTION FOR START (
-   BASE_TIME_GRANULARITY = 1HOUR,
-   [0,8) : 500,
-   [8,9) : 800,
-   [9,10) : 740,
-   [10,11) : 740,
-   [11,12) : 800
+   BASE_TIME_GRANULARITY = 1MINUTE,
+   [0,120) : 8,
+   [120,240) : 18,
+   [240,360) : 36,
+   [360,480) : 12,
+   [480,600) : 22,
+   [600,720) : 40
 )
 
 
@@ -237,15 +244,15 @@ CREATE DISTRIBUTION FOR START (
 # DELIVERY TIME DISTRIBUTION
 # ----------------------------------
 
-# 85% of the sampling weight is in the
-# shorter delivery interval.
-# 15% is in the longer delivery interval.
+# Most orders take less time to deliver,
+# but some orders might take longer.
+# We assume 85% take 35-49 minutes
+# and 15% take 50-79 minutes after payment.
+# These times include preparation and pickup.
 
 CREATE TIME DISTRIBUTION FOR E7 (
    BASE_TIME_GRANULARITY = 1MINUTE,
-   [70,100) : 85,
-   [100,180) : 15
+   [35,50) : 85,
+   [50,80) : 15
 )
 
-
-END
