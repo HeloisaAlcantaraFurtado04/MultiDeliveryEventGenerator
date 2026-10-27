@@ -257,22 +257,24 @@ TERMINATE OrderCancelled
 
 CREATE DISTRIBUTION FOR START (
    BASE_TIME_GRANULARITY = 1MINUTE,
-   [0,120) : 8,
-   [120,240) : 18,
-   [240,360) : 36,
-   [360,480) : 12,
-   [480,600) : 22,
-   [600,720) : 40
-)
+   #8am - 12pm 
+   [0,240) : 26, 
 
+   #12pm - 4pm
+   [240,480) : 48,
+
+   #4pm - 8pm 
+   [480,720) : 62
+)
 
 # ----------------------------------
 # PREPARATION TIME DISTRIBUTION
 # ----------------------------------
 
 # Most finish prepping in 4 to 8 minutes.
-# Others in 9 to 15 minutes 
+# Less in 9 to 15 minutes 
 
+#perecntage 
 CREATE TIME DISTRIBUTION FOR E5 (
    BASE_TIME_GRANULARITY = 1MINUTE,
    [4,9) : 70,
@@ -285,22 +287,16 @@ CREATE TIME DISTRIBUTION FOR E5 (
 # ----------------------------------
 
 # These times are measured from PaymentCompleted.
-#
-# We assume most orders finish within
-# 35 to 49 minutes after payment.
-#
-# Some orders take 50 to 79 minutes
-# because of longer pickup or travel times.
-#
-# The minimum is set after the maximum
-# estimated pickup time in this simplified model.
-#
-# This is not yet a true ETA-based delay check.
+
+# The goal is for all deliveries to finish within
+# 2 hours after payment.
 
 CREATE TIME DISTRIBUTION FOR E8 (
    BASE_TIME_GRANULARITY = 1MINUTE,
-   [35,50) : 85,
-   [50,80) : 15
+   [15,35)  : 20,
+   [35,50)  : 50,
+   [50,80)  : 25,
+   [80,121) : 5
 )
 
 END
