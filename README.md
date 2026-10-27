@@ -58,8 +58,6 @@ An order must not skip required stages or transition to a status that violates t
 
 ## Event Sequence
 
-The following events represent the main actions in the ordering and delivery process.
-
 | Event | Description |
 |---|---|
 | `PlaceOrder` | The student places an order. |
