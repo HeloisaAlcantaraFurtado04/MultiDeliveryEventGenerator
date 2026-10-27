@@ -1,7 +1,5 @@
 # MultiDeliveryEventGenerator
 
-# Multi-Delivery App
-
 ## Overview
 <<<<<<< HEAD
 The Multi-Delivery App allows students to order items from different stores or restaurants and have them delivered to a selected campus location. 
