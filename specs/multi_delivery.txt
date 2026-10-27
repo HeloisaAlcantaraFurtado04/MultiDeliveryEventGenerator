@@ -7,12 +7,12 @@ END = 720MINUTE
 # Database tables
 RESOURCES
 TABLES
-   users,
-   sellers,
-   items,
-   orders,
-   order_items,
-   events,
+   users, # student and driver
+   sellers, # stores involved
+   items, # which products stores sell
+   orders, # connect student, driver, delivery
+   order_items, # connect individual products to one order
+   events, # represent activity occurring
 END TABLES
 
 VARIABLES
@@ -22,14 +22,14 @@ FUNCTIONS
 END FUNCTIONS
 
 
-# A student places an order after signing in
-CREATE EVENTTYPE OrderPlaced (
+# A student starts an order after signing in
+CREATE EVENTTYPE OrderStarted (. #beginning of the shopping process 
    EVENTTIME 1,
    INGESTTIME (1) MAXDELAY (10),
 
    event_id: AUTO_INCREMENT,
    order_id: AUTO_INCREMENT,
-   student_id: orders(student_id) FOREIGNKEY,
+   student_id: orders(student_id) FOREIGNKEY, #existing order from the student id
    delivery_location: orders(delivery_location),
    estimated_delivery_time: orders(estimated_delivery_time),
    created_at: orders(created_at),
@@ -44,13 +44,29 @@ CREATE EVENTTYPE AddItem (
    INGESTTIME (1) MAXDELAY (10),
 
    event_id: AUTO_INCREMENT,
-   order_item_id: AUTO_INCREMENT,
-   order_id: INHERIT OrderPlaced(order_id),
+   order_item_id: AUTO_INCREMENT, # generates a distintic id for each order item 
+   order_id: INHERIT OrderStarted(order_id), #reuses the one that it started 
    item_id: items(item_id) FOREIGNKEY,
-   seller_id: items(seller_id) FOREIGNKEY,
+   seller_id: items(seller_id) FOREIGNKEY, 
    quantity: order_items(quantity),
 
-   order_item_id -> ALL
+   order_item_id -> ALL # it relates to all attributes 
+)
+
+
+# The student places the order after adding items
+CREATE EVENTTYPE OrderPlaced (
+   EVENTTIME 1,
+   INGESTTIME (1) MAXDELAY (10),
+
+   event_id: AUTO_INCREMENT,
+   order_id: INHERIT OrderStarted(order_id), #reuses the original order id
+   student_id: INHERIT OrderStarted(student_id), #same student 
+   delivery_location: INHERIT OrderStarted(delivery_location),
+   estimated_delivery_time: INHERIT OrderStarted(estimated_delivery_time),#reuses the delivery estimate
+   created_at: INHERIT OrderStarted(created_at),
+
+   order_id -> ALL
 )
 
 
@@ -60,8 +76,8 @@ CREATE EVENTTYPE PaymentCompleted (
    INGESTTIME (1) MAXDELAY (10),
 
    event_id: AUTO_INCREMENT,
-   order_id: INHERIT OrderPlaced(order_id),
-   student_id: INHERIT OrderPlaced(student_id),
+   order_id: INHERIT OrderPlaced(order_id), # id of the confirmed order 
+   student_id: INHERIT OrderPlaced(student_id), #student id of the same order-placement process 
 
    order_id -> ALL
 )
@@ -86,7 +102,7 @@ CREATE EVENTTYPE OrderCancelled (
    INGESTTIME (1) MAXDELAY (10),
 
    event_id: AUTO_INCREMENT,
-   order_id: INHERIT PaymentFailed(order_id),
+   order_id: INHERIT PaymentFailed(order_id),# payment fails leads to order cancelled 
    student_id: INHERIT PaymentFailed(student_id),
 
    order_id -> ALL
@@ -99,9 +115,9 @@ CREATE EVENTTYPE ItemsPreparing (
    INGESTTIME (1) MAXDELAY (10),
 
    event_id: AUTO_INCREMENT,
-   order_id: INHERIT PaymentCompleted(order_id),
+   order_id: INHERIT PaymentCompleted(order_id), #only if payment succeeds 
    seller_id: sellers(seller_id) FOREIGNKEY,
-   is_available: items(is_available),
+   is_available: items(is_available), #checks if the product is available 
 
    (order_id, seller_id) -> ALL
 )
@@ -167,59 +183,65 @@ CREATE EVENTTYPE OrderDelivered (
 # EVENT RELATIONSHIPS
 # ----------------------------------
 
-# A student places an order
-E0: CAUSE START; OrderPlaced
+# A student starts an order
+E0: CAUSE START; OrderStarted
 
 
-# The order has between 1 and 4 items
-# Recording the items takes 1 to 3 minutes
-E1: CAUSE OrderPlaced; AddItem
-   TIME BETWEEN 1MINUTE AND 4MINUTE
+# The student adds between 1 and 5 items
+# Adding items takes 1 to 5 minutes
+E1: CAUSE OrderStarted; AddItem
+   TIME BETWEEN 1MINUTE AND 5MINUTE
    COUNT BETWEEN 1 AND 5
 
 
-# Payment happens after the items are recorded
-# We assume this takes 4 to 8 minutes from order placement
-E2: CAUSE OrderPlaced; PaymentCompleted
+# The student reviews the cart and places the order
+# Order placement happens 6 to 10 minutes after starting
+E2: CAUSE OrderStarted; OrderPlaced
+   TIME BETWEEN 6MINUTE AND 10MINUTE
+
+
+# Payment happens after the order is placed
+# We assume this takes 4 to 9 minutes from order placement
+E3: CAUSE OrderPlaced; PaymentCompleted
    TIME BETWEEN 4MINUTE AND 9MINUTE
 
 
 # Each seller starts preparing their part of the order
-# We simulate between 1 and 3 sellers
-E3: CAUSE PaymentCompleted; ItemsPreparing
+# We simulate between 1 and 4 sellers
+E4: CAUSE PaymentCompleted; ItemsPreparing
    TIME BETWEEN 1MINUTE AND 4MINUTE
    COUNT BETWEEN 1 AND 4
 
 
 # Preparation takes different amounts of time
-# The distribution for E4 is defined below
-E4: CAUSE ItemsPreparing; ItemsReady
+# The distribution for E5 is defined below
+E5: CAUSE ItemsPreparing; ItemsReady
 
 
 # A driver is assigned while the sellers are preparing
-# We assume driver assignment takes 3 to 5 minutes
-E5: CAUSE PaymentCompleted; DriverAssigned
+# We assume driver assignment takes 3 to 6 minutes
+E6: CAUSE PaymentCompleted; DriverAssigned
    TIME BETWEEN 3MINUTE AND 6MINUTE
 
 
 # The driver travels to the seller and picks up the items
-# We assume this takes 6 to 12 minutes after items are ready
-E6: CAUSE ItemsReady; ItemsPickedUp
+# We assume this takes 6 to 13 minutes after items are ready
+E7: CAUSE ItemsReady; ItemsPickedUp
    TIME BETWEEN 6MINUTE AND 13MINUTE
 
 
 # Approximate delivery timing after payment
 # A longer delivery time is possible
-# Distribution for E7 is defined below
+# Distribution for E8 is defined below
 #
 # NOTE: This is a timing approximation.
 # It does not check whether every seller has been picked up.
-E7: CAUSE PaymentCompleted; OrderDelivered
+E8: CAUSE PaymentCompleted; OrderDelivered
 
 
 # If a payment failure is generated, cancel the order
 # Payment failure branching is not implemented yet
-E8: CAUSE PaymentFailed; OrderCancelled
+E9: CAUSE PaymentFailed; OrderCancelled
    TIME BETWEEN 1MINUTE AND 3MINUTE
 
 
@@ -263,7 +285,7 @@ CREATE DISTRIBUTION FOR START (
 #
 # These are initial simulation assumptions.
 
-CREATE TIME DISTRIBUTION FOR E4 (
+CREATE TIME DISTRIBUTION FOR E5 (
    BASE_TIME_GRANULARITY = 1MINUTE,
    [4,9) : 70,
    [9,16) : 30
@@ -287,7 +309,7 @@ CREATE TIME DISTRIBUTION FOR E4 (
 #
 # This is not yet a true ETA-based delay check.
 
-CREATE TIME DISTRIBUTION FOR E7 (
+CREATE TIME DISTRIBUTION FOR E8 (
    BASE_TIME_GRANULARITY = 1MINUTE,
    [35,50) : 85,
    [50,80) : 15
