@@ -147,6 +147,9 @@ We use six tables:
 
 The `order_items` table connects the items to an order, while the `items` table identifies which seller each item belongs to.
 
+link: (https://docs.google.com/spreadsheets/d/1u-LX9lzAdv4MZYq0FdlmohyunyQ-Uek2qdgAu1zaqhY/edit?usp=sharing)
+
+
 ---
 
 ## Event Generation
