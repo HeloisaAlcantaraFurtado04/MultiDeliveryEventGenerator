@@ -1,7 +1,7 @@
 
 BASE_TIME_GRANULARITY = 1MINUTE
 START = 0,
-END = 12HOUR
+END = 720 //12 hours = 720 minutes 
 
 
 # Database tables
