@@ -34,7 +34,7 @@ CREATE EVENTTYPE OrderPlaced (
    delivery_location: orders(delivery_location),
    estimated_delivery_time: orders(estimated_delivery_time),
    created_at: orders(created_at),
-
+   
    order_id -> ALL
 )
 
@@ -46,12 +46,16 @@ CREATE EVENTTYPE AddItem (
 
    event_id: AUTO_INCREMENT,
    order_item_id: AUTO_INCREMENT,
+
+   #inherits the order ID from OrderPlaced
    order_id: INHERIT OrderPlaced(order_id),
+
    item_id: items(item_id) FOREIGNKEY,
    seller_id: items(seller_id) FOREIGNKEY,
    quantity: order_items(quantity),
 
-   order_item_id -> ALL #t helps maintain consistency between an order and its associated information
+   #connect those separate item events to the same order.
+   order_item_id -> ALL #it helps maintain consistency between an order and its associated information
 )
 
 
