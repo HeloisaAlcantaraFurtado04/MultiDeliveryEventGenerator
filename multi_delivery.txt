@@ -39,7 +39,7 @@ CREATE EVENTTYPE OrderPlaced (
 )
 
 
-# The student adds items from different sellers
+# The student adds items from different sellers if wanted  
 CREATE EVENTTYPE AddItem (
    EVENTTIME 1,
    INGESTTIME (1) MAXDELAY (10),
@@ -51,7 +51,7 @@ CREATE EVENTTYPE AddItem (
    seller_id: items(seller_id) FOREIGNKEY,
    quantity: order_items(quantity),
 
-   order_item_id -> ALL
+   order_item_id -> ALL #t helps maintain consistency between an order and its associated information
 )
 
 
