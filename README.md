@@ -2,10 +2,9 @@
 
 ## Overview
 
-The Multi-Delivery App is an application where students can order food, books, and other supplies from different stores and restaurants around campus. They can choose a delivery location and have their items delivered there.
+The Multi-Delivery App is an application where students can order food, books, and other supplies from different stores and restaurants around campus. 
 
-Students can look at items without signing in, but they need to log in when placing an order. They can also order items from multiple stores in the same order.Our goal is to generate event streams that represent how the ordering and delivery process works, including situations where payments fail or deliveries take longer than expected.
-
+Students can look at items without signing in, but they need to log in when placing an order. They can also order items from multiple stores in the same order.
 ## Constraints
 
 ### 1. Ordering
@@ -47,13 +46,6 @@ An order can have items from different stores. Each seller prepares their own it
 ### 13. Event Reference
 Each event must be linked to the correct order. Events involving sellers should also have the correct seller ID.
 
-### 14. Status
-An order should follow these status changes:
-
-`Placed → Preparing → Picked Up → Delivered`
-
-If the payment fails, the order can be cancelled instead.
-
 ---
 
 ## Event Sequence
@@ -62,16 +54,16 @@ These are the main events that can happen during an order.
 
 | Event | Description |
 |---|---|
-| `OrderPlaced` | The student places an order. |
-| `AddItem` | Items are added to the order. |
-| `PaymentCompleted` | The payment goes through. |
-| `PaymentFailed` | The payment does not go through. |
-| `OrderCancelled` | The order is cancelled. |
-| `ItemsPreparing` | The seller starts preparing the items. |
-| `ItemsReady` | The items are ready for pickup. |
-| `DriverAssigned` | A driver is assigned to the order. |
-| `ItemsPickedUp` | The driver picks up the items from a seller. |
-| `OrderDelivered` | The order is delivered to the student. |
+| `OrderPlaced` | The student places an order |
+| `AddItem` | Items are added to the order |
+| `PaymentCompleted` | The payment goes through |
+| `PaymentFailed` | The payment does not go through |
+| `OrderCancelled` | The order is cancelled |
+| `ItemsPreparing` | The seller starts preparing the items |
+| `ItemsReady` | The items are ready for pickup |
+| `DriverAssigned` | A driver is assigned to the order |
+| `ItemsPickedUp` | The driver picks up the items from a seller |
+| `OrderDelivered` | The order is delivered to the student |
 
 ---
 
@@ -92,7 +84,6 @@ If the payment fails, the order is cancelled and the process stops.
 
 Also, when an order has items from different stores, the sellers might finish preparing their items at different times. The driver needs to pick up the items from all the stores before completing the delivery.
 
-Some orders might also take longer than expected.
 
 ### Process Flow
 
@@ -138,29 +129,17 @@ We use six tables:
 
 | Table | Description |
 |---|---|
-| `users` | Stores students and drivers. |
-| `sellers` | Stores the different stores and restaurants. |
-| `items` | Stores the items sold by each seller. |
-| `orders` | Stores information about each order. |
-| `order_items` | Stores the items and quantities included in an order. |
-| `events` | Stores the events generated during the process. |
+| `users` | Stores students and drivers |
+| `sellers` | Stores the different stores and restaurants |
+| `items` | Stores the items sold by each seller |
+| `orders` | Stores information about each order |
+| `order_items` | Stores the items and quantities included in an order |
+| `events` | Stores the events generated during the process |
 
 The `order_items` table connects the items to an order, while the `items` table identifies which seller each item belongs to.
 
 link: (https://docs.google.com/spreadsheets/d/1u-LX9lzAdv4MZYq0FdlmohyunyQ-Uek2qdgAu1zaqhY/edit?usp=sharing)
 
-
----
-
-## Event Generation
-
-We are using CEPAL to describe the events and how they are connected.
-
-The simulation generates orders with different numbers of items and sellers. It also uses time distributions so that preparation, pickup, and delivery do not always take the same amount of time.
-
-We also want to include cases where payments fail or deliveries are delayed, instead of having every order follow the exact same process.
-
-Some parts, such as making sure all sellers have been picked up before delivery and choosing between successful and failed payments, still need to be implemented in the generator.
 
 
 
