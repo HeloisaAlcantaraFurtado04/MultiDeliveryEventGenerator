@@ -187,30 +187,27 @@ CREATE EVENTTYPE OrderDelivered (
 E0: CAUSE START; OrderStarted
 
 
-# The student adds between 1 and 5 items
-# Adding items takes 1 to 5 minutes
+
 E1: CAUSE OrderStarted; AddItem
    TIME BETWEEN 1MINUTE AND 5MINUTE
-   COUNT BETWEEN 1 AND 5
+   COUNT BETWEEN 1 AND 5 #number of items 
 
 
-# The student reviews the cart and places the order
 # Order placement happens 6 to 10 minutes after starting
 E2: CAUSE OrderStarted; OrderPlaced
    TIME BETWEEN 6MINUTE AND 10MINUTE
 
 
 # Payment happens after the order is placed
-# We assume this takes 4 to 9 minutes from order placement
+# assume this takes 4 to 9 minutes from order placement
 E3: CAUSE OrderPlaced; PaymentCompleted
    TIME BETWEEN 4MINUTE AND 9MINUTE
 
 
-# Each seller starts preparing their part of the order
-# We simulate between 1 and 4 sellers
+# We simulate between 1 and 3 sellers
 E4: CAUSE PaymentCompleted; ItemsPreparing
    TIME BETWEEN 1MINUTE AND 4MINUTE
-   COUNT BETWEEN 1 AND 4
+   COUNT BETWEEN 1 AND 3
 
 
 # Preparation takes different amounts of time
@@ -253,14 +250,10 @@ TERMINATE OrderCancelled
 # ORDER ARRIVAL DISTRIBUTION
 # ----------------------------------
 
-# We simulate a 720-minute campus day.
-# For this example, minute 0 represents 8 AM.
-#
-# Fewer orders happen in the morning and afternoon.
-# We expect more orders around lunch and dinner.
-#
-# The values are the number of simulated orders
-# in each interval, not percentages.
+# 720-minute campus day, 8am to 8pm
+# Fewer orders happen in  morning and afternoon.
+# More orders around lunch and dinner.
+
 
 CREATE DISTRIBUTION FOR START (
    BASE_TIME_GRANULARITY = 1MINUTE,
@@ -277,13 +270,8 @@ CREATE DISTRIBUTION FOR START (
 # PREPARATION TIME DISTRIBUTION
 # ----------------------------------
 
-# We assume most sellers finish preparing
-# their items in 4 to 8 minutes.
-#
-# Some sellers take 9 to 15 minutes,
-# depending on the items and workload.
-#
-# These are initial simulation assumptions.
+# Most finish prepping in 4 to 8 minutes.
+# Others in 9 to 15 minutes 
 
 CREATE TIME DISTRIBUTION FOR E5 (
    BASE_TIME_GRANULARITY = 1MINUTE,
