@@ -1,0 +1,143 @@
+BASE_TIME_GRANULARITY = 1 MINUTE
+START = 0
+END = 12 HOUR
+
+RESOURCES 
+TABLES
+Users, Sellers, Items, Orders, OrderItems
+END TABLES
+VARIABLES
+Map_bounds = ([0,100],[0,100])
+END VARIABLES
+FUNCTIONS
+city_block_distance
+END FUNCTIONS
+
+-- EVENT TYPES --
+
+CREATE EVENTTYPE OrderStarted (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: Order(order_id) FOREIGNKEY,
+	student_id: User(user_id) FOREIGNKEY,
+	delivery_location: Order(delivery_location),
+	order_id -> ALL
+)
+
+CREATE EVENTTYPE AddItem (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: INHERIT OrderStarted(order_id) FOREIGNKEY,
+	seller_id: Seller(seller_id) FOREIGNKEY,
+	item_id: Item(item_id) FOREIGNKEY,
+	quantity: OrderItem(quantity),
+	order_id -> ALL
+)
+
+CREATE EVENTTYPE OrderPlaced (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: INHERIT OrderStarted(order_id) FOREIGNKEY,
+	student_id: INHERIT OrderStarted(student_id),
+	order_id -> ALL
+)
+
+CREATE EVENTTYPE PaymentCompleted (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: INHERIT OrderStarted(order_id) FOREIGNKEY,
+	order_id -> ALL
+)
+
+CREATE EVENTTYPE PaymentFailed (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: INHERIT OrderStarted(order_id) FOREIGNKEY,
+	order_id -> ALL
+)
+
+CREATE EVENTTYPE ItemsPreparing (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: INHERIT OrderStarted(order_id) FOREIGNKEY,
+	seller_id: Seller(seller_id) FOREIGNKEY,
+	order_id -> ALL
+)
+
+CREATE EVENTTYPE DriverAssigned (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: INHERIT OrderStarted(order_id) FOREIGNKEY,
+	driver_id: User(user_id) FOREIGNKEY,
+	order_id -> ALL
+)
+
+CREATE EVENTTYPE ItemsReady (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: INHERIT OrderStarted(order_id) FOREIGNKEY,
+	seller_id: Seller(seller_id) FOREIGNKEY,
+	order_id -> ALL
+)
+
+CREATE EVENTTYPE ItemsPickedUp (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: INHERIT OrderStarted(order_id) FOREIGNKEY,
+	seller_id: Seller(seller_id) FOREIGNKEY,
+	driver_id: INHERIT DriverAssigned(driver_id),
+	order_id -> ALL
+)
+
+CREATE EVENTTYPE OrderDelivered (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: INHERIT OrderStarted(order_id) FOREIGNKEY,
+	driver_id: INHERIT DriverAssigned(driver_id),
+	order_id -> ALL
+)
+
+CREATE EVENTTYPE OrderCancelled (
+	EVENTTIME 1,
+	INGESTTIME (1) MAXDELAY (5),
+	order_id: INHERIT OrderStarted(order_id) FOREIGNKEY,
+	order_id -> ALL
+)
+
+-- EVENT FLOW CAUSAL CHAINS --
+
+-- Success Workflow
+E0: CAUSE START; OrderStarted
+E1: CAUSE OrderStarted; AddItem TIME BETWEEN 2MINUTE AND 5MINUTE
+E2: CAUSE AddItem; OrderPlaced TIME BETWEEN 4MINUTE AND 8MINUTE
+E3: CAUSE OrderPlaced; PaymentCompleted TIME BETWEEN 5MINUTE AND 10MINUTE
+E4: CAUSE PaymentCompleted; ItemsPreparing TIME BETWEEN 2MINUTE AND 5MINUTE
+E5: CAUSE ItemsPreparing; DriverAssigned TIME BETWEEN 1MINUTE AND 3MINUTE
+E6: CAUSE ItemsPreparing; ItemsReady TIME BETWEEN 5MINUTE AND 15MINUTE
+E7: CAUSE ItemsReady; ItemsPickedUp TIME BETWEEN 5MINUTE AND 10MINUTE
+E8: CAUSE ItemsPickedUp; OrderDelivered TIME BETWEEN 10MINUTE AND 20MINUTE
+TERMINATE OrderDelivered
+
+-- Failure / Cancellation Workflow
+E9: CAUSE OrderPlaced; PaymentFailed TIME BETWEEN 5MINUTE AND 10MINUTE
+E10: CAUSE PaymentFailed; OrderCancelled TIME BETWEEN 1MINUTE AND 3MINUTE
+TERMINATE OrderCancelled
+
+-- DISTRIBUTIONS --
+
+CREATE DISTRIBUTION FOR START (
+	BASE_TIME_GRANULARITY = 1 HOUR,
+	[0,8) : 10,
+	[8,10) : 150,   -- Morning rush (e.g., Order 1001)
+	[10,12) : 80,
+	[12,14) : 300,  -- Lunch rush (e.g., Order 1002)
+	[14,17) : 100,
+	[17,19) : 250   -- Dinner rush (e.g., Order 1003)
+)
+
+CREATE TIME DISTRIBUTION FOR E8 (
+	BASE_TIME_GRANULARITY = 1 MINUTE,
+	[10,15) : 400,  -- On-campus nearby delivery
+	[15,20) : 600,  -- Standard delivery time
+	[20,30) : 100   -- Delayed delivery
+)
