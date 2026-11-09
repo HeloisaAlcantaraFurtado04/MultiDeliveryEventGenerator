@@ -54,8 +54,9 @@ These are the main events that can happen during an order.
 
 | Event | Description |
 |---|---|
-| `OrderPlaced` | The student places an order |
+| `OrderStarted` | The student starts a new order |
 | `AddItem` | Items are added to the order |
+| `OrderPlaced` | The student places an order |
 | `PaymentCompleted` | The payment goes through |
 | `PaymentFailed` | The payment does not go through |
 | `OrderCancelled` | The order is cancelled |
@@ -97,7 +98,10 @@ Also, when an order has items from different stores, the sellers might finish pr
 ### Process Flow
 
 ```text
-AddItem
+OrderStarted
+     |
+     v
+AddItem (one or more)
      |
      v
 OrderPlaced
@@ -111,16 +115,16 @@ Payment
 PaymentCompleted
      |
      v
-ItemsPreparing
+ItemsPreparing (per seller)
      |
      v
-ItemsReady
+ItemsReady (per seller)
      |
      v
 DriverAssigned
      |
      v
-ItemsPickedUp
+ItemsPickedUp (per seller)
      |
      v
 OrderDelivered
@@ -129,23 +133,26 @@ OrderDelivered
 The `ItemsPreparing`, `ItemsReady`, and `ItemsPickedUp` events can happen multiple times if the order includes items from different sellers.
 
 ---
-
 ## Database
 
-The database contains the information about students, sellers, items, and orders.
+The database contains information about students, drivers, sellers, items, orders, and events.
 
 We use six tables:
 
-| Table | Description |
-|---|---|
-| `users` | Stores students and drivers |
-| `sellers` | Stores the different stores and restaurants |
-| `items` | Stores the items sold by each seller |
-| `orders` | Stores information about each order |
-| `order_items` | Stores the items and quantities included in an order |
-| `events` | Stores the events generated during the process |
+| Table | Attributes | Description |
+|---|---|---|
+| `users` | `user_id`, `name`, `role` | Stores students and drivers |
+| `sellers` | `seller_id`, `store_name`, `category` | Stores information about the different stores and restaurants |
+| `items` | `item_id`, `seller_id`, `name`, `price`, `is_available` | Stores the items sold by each seller and their availability |
+| `orders` | `order_id`, `student_id`, `driver_id`, `delivery_location`, `order_status`, `estimated_delivery_time`, `created_at` | Stores information about each order, including its status, delivery location, and assigned driver |
+| `order_items` | `order_item_id`, `order_id`, `item_id`, `quantity` | Stores the items and quantities included in each order |
+| `events` | `event_id`, `order_id`, `seller_id`, `event_type`, `timestamp` | Stores the events generated during the ordering and delivery process |
 
-The `order_items` table connects the items to an order, while the `items` table identifies which seller each item belongs to.
+The `order_items` table connects items to an order, while the `items` table identifies which seller each item belongs to.
+
+Each order is associated with a student, and a driver can be assigned during the delivery process. The `events` table records the events associated with each order, including seller-specific events when applicable.
+
+An order can contain items from multiple sellers, and each seller prepares their own items before pickup.
 
 link: (https://docs.google.com/spreadsheets/d/1u-LX9lzAdv4MZYq0FdlmohyunyQ-Uek2qdgAu1zaqhY/edit?usp=sharing)
 
