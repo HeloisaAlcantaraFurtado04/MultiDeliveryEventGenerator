@@ -71,14 +71,23 @@ These are the main events that can happen during an order.
 
 The process starts when a student selects items from one or more stores. The student then signs in, chooses a delivery location, and places the order.
 
-1. **OrderPlaced** — The student places the order.
-2. **AddItem** — The items selected by the student are recorded in the order.
-3. **PaymentCompleted** — The payment is completed.
-4. **ItemsPreparing** — The sellers start preparing their items.
-5. **ItemsReady** — The items are ready to be picked up.
-6. **DriverAssigned** — A driver is assigned to pick up the order.
-7. **ItemsPickedUp** — The driver picks up the items from the different sellers.
-8. **OrderDelivered** — The driver delivers the complete order to the student.
+1. OrderStarted — The student starts a new order.
+
+2. AddItem — The items selected by the student are recorded in the order.
+
+3. OrderPlaced — The student places the order.
+
+4. PaymentCompleted — The payment is completed.
+
+5. ItemsPreparing — The sellers start preparing their items.
+
+6. ItemsReady — The items are ready to be picked up.
+
+7. DriverAssigned — A driver is assigned to pick up the order.
+
+8. ItemsPickedUp — The driver picks up the items from the different sellers.
+
+9. OrderDelivered — The driver delivers the complete order to the student.
 
 If the payment fails, the order is cancelled and the process stops.
 
