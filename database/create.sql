@@ -60,7 +60,7 @@ event_id INTEGER PRIMARY KEY,
     is_available BOOLEAN
 
 ); 
--- LM generated data 
+-- LLM generated data 
 INSERT INTO users (user_id, name, role, email, phone) VALUES 
 (1, 'Emma Watson', 'student', 'emma.w@university.edu', '555-0201'),
 (2, 'John Boyega', 'student', 'john.b@university.edu', '555-0202'),
