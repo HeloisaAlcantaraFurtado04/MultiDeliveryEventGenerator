@@ -139,10 +139,12 @@ E4: CAUSE PaymentCompleted; ItemsPreparing TIME BETWEEN 1min AND 4min
 E5: CAUSE ItemsPreparing; ItemsReady
 E6: CAUSE PaymentCompleted; DriverAssigned TIME BETWEEN 3min AND 6min
 E7: CAUSE ItemsReady; ItemsPickedUp TIME BETWEEN 6min AND 13min
-E8: CAUSE PaymentCompleted; OrderDelivered
+E8: CAUSE ItemsPickedUp; OrderDelivered
 E9: CAUSE PaymentFailed; OrderCancelled TIME BETWEEN 1min AND 3min
+E10: CAUSE OrderPlaced; PaymentFailed TIME BETWEEN 4min AND 9min
 TERMINATE OrderDelivered
 TERMINATE OrderCancelled
+ 
 
 CREATE DISTRIBUTION FOR START (
     BASE_TIME_GRANULARITY = 1 MINUTE,
@@ -165,12 +167,22 @@ CREATE TIME DISTRIBUTION FOR E5 (
     [9,16) : 30
 )
  
+CREATE COUNT DISTRIBUTION FOR E3 (
+    [0,1) : 0.05,
+    [1,2) : 0.95
+)
+ 
+CREATE COUNT DISTRIBUTION FOR E10 (
+    [0,1) : 0.95,
+    [1,2) : 0.05
+)
+ 
 CREATE TIME DISTRIBUTION FOR E8 (
     BASE_TIME_GRANULARITY = 1 MINUTE,
-    [15,35) : 20,
-    [35,50) : 50,
-    [50,80) : 25,
-    [80,121) : 5
+    [5,15) : 20,
+    [15,30) : 50,
+    [30,60) : 25,
+    [60,85) : 5
 )
  
 END
